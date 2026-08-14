@@ -4,7 +4,5 @@ requests
 curl-cffi
 websocket-client
 orjson
-uuid
-datetime
 fastapi
 uvicorn

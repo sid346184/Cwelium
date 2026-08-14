@@ -544,6 +544,7 @@ def run(req: ActionRequest):
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-# Serve the frontend static files locally
-from fastapi.staticfiles import StaticFiles
-app.mount("/", StaticFiles(directory="public", html=True), name="public")
+# Serve the frontend static files locally (if directory exists)
+if os.path.exists("public"):
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/", StaticFiles(directory="public", html=True), name="public")
