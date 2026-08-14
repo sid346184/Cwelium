@@ -167,7 +167,10 @@ global_raider = None
 
 class Render:
     def __init__(self):
-        self.size = os.get_terminal_size().columns
+        try:
+            self.size = os.get_terminal_size().columns
+        except OSError:
+            self.size = 80
         self.print_lock = threading.Lock()
         self.theme_name = color if color in C else "light_blue"
         self.theme_hex = C[self.theme_name].hex
@@ -217,34 +220,7 @@ class Render:
         return (" " * padding) + text
 
     def render_ascii(self):
-        self.clear()
-        self.title(f"Cwelium | Connected as {self.username} | made by Tips-Discord")
-        
-        edges = {"╗", "║", "╚", "╝", "═", "╔"}
-        logo = [
-            " ██████╗██╗    ██╗███████╗██╗     ██╗██╗   ██╗███╗   ███╗",
-            "██╔════╝██║    ██║██╔════╝██║     ██║██║   ██║████╗ ████║",
-            "██║     ██║ █╗ ██║█████╗  ██║     ██║██║   ██║██╔████╔██║",
-            "██║     ██║███╗██║██╔══╝  ██║     ██║██║   ██║██║╚██╔╝██║",
-            "╚██████╗╚███╔███╔╝███████╗███████╗██║╚██████╔╝██║ ╚═╝ ██║",
-            " ╚═════╝ ╚══╝╚══╝ ╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝     ╚═╝"
-        ]
-        
-        height = len(logo)
-        width = max(len(line) for line in logo)
-
-        print("\n")
-        for y, line in enumerate(logo):
-            colored_line = ""
-            visible_len = 0
-            for x, char in enumerate(line):
-                if char in edges:
-                    colored_line += f"{self._get_shade(x, y, width, height)}{char}{C['white']}"
-                else:
-                    colored_line += char
-                visible_len += 1
-            print(self.center_colored(colored_line, visible_len))
-        print("\n")
+        pass
 
     def raider_options(self):
         with open("data/proxies.txt") as f:
@@ -253,40 +229,6 @@ class Render:
         with open("data/tokens.txt", "r") as f:
             global tokens
             tokens = f.read().splitlines()
-
-        menu_edges = {"─", "╭", "│", "╰", "╯", "╮", "»", "«"}
-        menu = [
-            "╭─────────────────────────────────────────────────────────────────────────────────────────────╮",
-            "│ «01» Joiner            «07» Token Formatter    «13» Onliner           «19» Call Spammer     │",
-            "│ «02» Leaver            «08» Button Click       «14» Voice Raper       «20» Bio Change       │",
-            "│ «03» Spammer           «09» Accept Rules       «15» Change Nick       «21» Voice Joiner     │",
-            "│ «04» Token Checker     «10» Guild Check        «16» Thread Spammer    «22» Onboard Bypass   │",
-            "│ «05» Emoji Reaction    «11» Friend Spam        «17» Typer             «23» Dm Spammer       │",
-            "│ «06» ???               «12» ???                «18» ???               «24» Exit             │",
-            "╰─────────────────────────────────────────────────────────────────────────────────────────────╯",
-            "«~» Credits"
-        ]
-
-        stats_text = f"Loaded ‹{len(tokens)}› tokens | Loaded ‹{len(proxies)}› proxies"
-        stats_colored = f"Loaded ‹{self.background}{len(tokens)}{Fore.RESET}› tokens | Loaded ‹{self.background}{len(proxies)}{Fore.RESET}› proxies"
-        print(self.center_colored(stats_colored, len(stats_text)) + "\n")
-
-        h_menu = len(menu)
-        w_menu = len(menu[0])
-
-        for y, line in enumerate(menu):
-            colored_line = ""
-            visible_len = 0
-            for x, char in enumerate(line):
-                if char in menu_edges:
-                    shade = self._get_shade(x, y, w_menu, h_menu)
-                    colored_line += f"{shade}{char}{C['white']}"
-                else:
-                    colored_line += char
-                visible_len += 1
-            print(self.center_colored(colored_line, visible_len))
-        
-        print("\n")
 
     def run(self):
         options = [self.render_ascii(), self.raider_options()]
@@ -332,8 +274,6 @@ class AutoFetchHeaders:
             if AutoFetchHeaders._fetched:
                 return
 
-            console.log("Scraping", C["light_blue"], False, "Fetching latest Discord headers...")
-            
             response = requests.get("https://api.sockets.lol/discord/build", timeout=5)
             
             if response.status_code == 200:
@@ -348,17 +288,9 @@ class AutoFetchHeaders:
                         AutoFetchHeaders.browser_version = discord_data["browser_version"]
                         AutoFetchHeaders.native_build_number = discord_data["native_build_number"]
                         AutoFetchHeaders.client_build_number = discord_data["client_build_number"]
-
-                        console.log("Success", C["green"], False, f"Updated: Build {AutoFetchHeaders.client_build_number} | v{AutoFetchHeaders.client_version}")
                         AutoFetchHeaders._fetched = True
-                    else:
-                        console.log("Failed", C["red"], False, "Fetched data was not Stable channel.")
-                else:
-                    console.log("Failed", C["red"], False, "Stable 'Discord' client data not found in API.")
-            else:
-                console.log("Failed", C["red"], False, f"API returned status {response.status_code}")
-        except Exception as e:
-            console.log("Failed", C["red"], "AutoFetch", e)
+        except Exception:
+            pass
 
 class Utils:
     @staticmethod
@@ -839,6 +771,7 @@ class Raider:
 
                 if not in_guild:
                     console.log("Failed", C["red"], "Missing Access")
+                    return
                 token = random.choice(in_guild)
                 members = scrape(token, guild_id, channel_id)
 
@@ -1838,9 +1771,10 @@ class Menu:
     @wrapper
     def spammer(self):
         console.title(f"Cwelium - Spammer")
+        import sys
         link = input(console.prompt(f"Channel LINK"))
         if link == "" or not link.startswith("https://"):
-            self.main_menu()
+            sys.exit(0)
 
         guild_id = link.split("/")[4]
         channel_id = link.split("/")[5]
@@ -1850,7 +1784,7 @@ class Menu:
         message = input(console.prompt("Message"))
 
         if message == "":
-            self.main_menu()
+            sys.exit(0)
 
         delay_input = input(console.prompt("Delay (seconds)"))
         delay = None
@@ -1863,7 +1797,7 @@ class Menu:
             self.raider.member_scrape(guild_id, channel_id)
             count_str = input(console.prompt("Pings Amount"))
             if count_str == "":
-                self.main_menu()
+                sys.exit(0)
 
             ping_count = int(count_str)
 
@@ -1873,6 +1807,8 @@ class Menu:
         ]
 
         self.run(self.raider.spammer, args)
+        import sys
+        sys.exit(0)
 
     def checker(self):
         console.title(f"Cwelium - Checker")
@@ -1966,7 +1902,11 @@ class Menu:
         ]
 
         for line in credits_lines:
-            centered_line = line.center(os.get_terminal_size().columns)
+            try:
+                width = os.get_terminal_size().columns
+            except OSError:
+                width = console.size
+            centered_line = line.center(width)
             print(f"{Fore.RESET}{self.background}{centered_line}{Fore.RESET}")
 
         input("\n ~/> press enter to continue ")
@@ -1981,4 +1921,7 @@ class Menu:
             self.main_menu()
 
 if __name__ == "__main__":
-    Menu().main_menu()
+    menu = Menu()
+    console.raider_options()
+    # Call spammer directly
+    menu.spammer()

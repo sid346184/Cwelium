@@ -1,0 +1,17 @@
+# Python virtual environments and caches
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cwelium User Configuration & Credentials
+config.json
+data/tokens.txt
+data/proxies.txt
+scraped/
+
+# OS-specific files
+.DS_Store
+Thumbs.db

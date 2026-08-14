@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cwelium Raider Web - Premium Discord Automation</title>
+    <meta name="description" content="Next-generation glassmorphic web interface for Cwelium Discord Raider. Manage tokens, run checks, and spam with live streaming logs.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="theme-cyan">
+    <!-- Glowing background elements -->
+    <div class="glow-bg-blob blob-1"></div>
+    <div class="glow-bg-blob blob-2"></div>
+    <div class="glow-bg-blob blob-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="logo-glow"></div>
+                <h1 id="app-title">CWELIUM <span class="accent-text">RAIDER</span></h1>
+            </div>
+            <div class="header-controls">
+                <div class="theme-selector">
+                    <span class="theme-label">Theme:</span>
+                    <button class="theme-dot dot-cyan active" data-theme="cyan" title="Neon Cyan" id="btn-theme-cyan"></button>
+                    <button class="theme-dot dot-red" data-theme="red" title="Crimson Red" id="btn-theme-red"></button>
+                    <button class="theme-dot dot-green" data-theme="green" title="Lime Green" id="btn-theme-green"></button>
+                    <button class="theme-dot dot-purple" data-theme="purple" title="Orchid Purple" id="btn-theme-purple"></button>
+                    <button class="theme-dot dot-gold" data-theme="gold" title="Cyber Gold" id="btn-theme-gold"></button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="dashboard-grid">
+            <!-- Left Panel: State & Credentials -->
+            <section class="panel glass-panel credential-panel" id="panel-credentials">
+                <div class="panel-header">
+                    <h2>Credentials & Config</h2>
+                    <p class="panel-subtitle">Stored safely in your browser local storage</p>
+                </div>
+                <div class="panel-body">
+                    <!-- Tokens input -->
+                    <div class="input-group">
+                        <div class="input-header">
+                            <label for="input-tokens">Discord Tokens</label>
+                            <span class="badge" id="count-tokens">0 loaded</span>
+                        </div>
+                        <textarea id="input-tokens" placeholder="Paste Discord tokens here (one per line)..." rows="6"></textarea>
+                    </div>
+
+                    <!-- Proxies input -->
+                    <div class="input-group">
+                        <div class="input-header">
+                            <label for="input-proxies">Proxies (Optional)</label>
+                            <span class="badge" id="count-proxies">0 loaded</span>
+                        </div>
+                        <textarea id="input-proxies" placeholder="username:password@ip:port or ip:port (one per line)..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="quick-status">
+                        <span class="status-indicator online"></span>
+                        <span class="status-text">Backend API Connected</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center Panel: Operations Grid -->
+            <section class="panel glass-panel operations-panel" id="panel-operations">
+                <div class="panel-header">
+                    <h2>Operations</h2>
+                    <p class="panel-subtitle">Select an action to configure and run</p>
+                </div>
+                <div class="panel-body">
+                    <!-- Actions Grid -->
+                    <div class="actions-grid">
+                        <div class="action-card active" data-action="spammer" id="card-spammer">
+                            <div class="card-icon">💬</div>
+                            <h3>Spammer</h3>
+                            <p>Mass message sender</p>
+                        </div>
+                        <div class="action-card" data-action="checker" id="card-checker">
+                            <div class="card-icon">🔍</div>
+                            <h3>Checker</h3>
+                            <p>Validate accounts</p>
+                        </div>
+                        <div class="action-card" data-action="joiner" id="card-joiner">
+                            <div class="card-icon">📥</div>
+                            <h3>Joiner</h3>
+                            <p>Join servers via invite</p>
+                        </div>
+                        <div class="action-card" data-action="leaver" id="card-leaver">
+                            <div class="card-icon">📤</div>
+                            <h3>Leaver</h3>
+                            <p>Leave a Discord guild</p>
+                        </div>
+                        <div class="action-card" data-action="reactor" id="card-reactor">
+                            <div class="card-icon">🔥</div>
+                            <h3>Reactor</h3>
+                            <p>React to messages</p>
+                        </div>
+                        <div class="action-card" data-action="button" id="card-button">
+                            <div class="card-icon">🔘</div>
+                            <h3>Button Clicker</h3>
+                            <p>Click component buttons</p>
+                        </div>
+                        <div class="action-card" data-action="accept" id="card-accept">
+                            <div class="card-icon">📜</div>
+                            <h3>Accept Rules</h3>
+                            <p>Accept guild rules screen</p>
+                        </div>
+                        <div class="action-card" data-action="guild" id="card-guild">
+                            <div class="card-icon">🛡️</div>
+                            <h3>Guild Checker</h3>
+                            <p>Check guild join state</p>
+                        </div>
+                        <div class="action-card" data-action="bio" id="card-bio">
+                            <div class="card-icon">📝</div>
+                            <h3>Bio Changer</h3>
+                            <p>Mass bio update</p>
+                        </div>
+                        <div class="action-card" data-action="nick_changer" id="card-nick">
+                            <div class="card-icon">🏷️</div>
+                            <h3>Nick Changer</h3>
+                            <p>Change server nicknames</p>
+                        </div>
+                        <div class="action-card" data-action="voice_joiner" id="card-voice">
+                            <div class="card-icon">🔊</div>
+                            <h3>Voice Joiner</h3>
+                            <p>Join voice channels</p>
+                        </div>
+                        <div class="action-card" data-action="onboard" id="card-onboard">
+                            <div class="card-icon">⚡</div>
+                            <h3>Onboarding Bypass</h3>
+                            <p>Skip onboarding prompts</p>
+                        </div>
+                        <div class="action-card" data-action="dm_spam" id="card-dm">
+                            <div class="card-icon">✉️</div>
+                            <h3>DM Spammer</h3>
+                            <p>Send direct messages</p>
+                        </div>
+                        <div class="action-card" data-action="caller" id="card-call">
+                            <div class="card-icon">📞</div>
+                            <h3>Call Spammer</h3>
+                            <p>Spam voice call ringers</p>
+                        </div>
+                        <div class="action-card" data-action="typer" id="card-typer">
+                            <div class="card-icon">⌨️</div>
+                            <h3>Typer Spammer</h3>
+                            <p>Trigger typing status</p>
+                        </div>
+                        <div class="action-card" data-action="thread_spammer" id="card-thread">
+                            <div class="card-icon">🧵</div>
+                            <h3>Thread Spammer</h3>
+                            <p>Spam thread creations</p>
+                        </div>
+                        <div class="action-card" data-action="onliner" id="card-onliner">
+                            <div class="card-icon">🟢</div>
+                            <h3>Onliner</h3>
+                            <p>Keep accounts active</p>
+                        </div>
+                        <div class="action-card" data-action="friender" id="card-friender">
+                            <div class="card-icon">🤝</div>
+                            <h3>Friender</h3>
+                            <p>Send friend requests</p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Parameters Panel -->
+                    <div class="parameters-box glass-box" id="parameters-container">
+                        <h4 id="params-title">Spammer Configuration</h4>
+                        <div class="params-inputs-grid" id="params-inputs">
+                            <!-- Fields will be dynamically shown based on selection -->
+                        </div>
+                        <div class="action-trigger-row">
+                            <button class="btn btn-primary" id="btn-execute-action">
+                                <span class="btn-text">INITIALIZE RUN</span>
+                                <span class="loader-spinner hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Live Terminal -->
+            <section class="panel glass-panel terminal-panel" id="panel-terminal">
+                <div class="panel-header terminal-header">
+                    <div class="terminal-badge">
+                        <span class="terminal-dot"></span>
+                        <h2>Terminal Logs</h2>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btn-clear-terminal">CLEAR</button>
+                </div>
+                <div class="panel-body terminal-body">
+                    <div class="terminal-window" id="terminal-output">
+                        <div class="terminal-line system-line">[SYSTEM] Cwelium Web Raider loaded. Please enter tokens and start an operation.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
