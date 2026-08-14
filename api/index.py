@@ -104,8 +104,17 @@ class ThreadLocalSession:
     @property
     def current_session(self):
         if not hasattr(self._local, "session"):
-            import curl_cffi
-            self._local.session = curl_cffi.Session(impersonate="chrome136")
+            try:
+                import curl_cffi
+                self._local.session = curl_cffi.Session(impersonate="chrome136")
+            except Exception as e:
+                import requests
+                print(f"Warning: curl-cffi failed to load in thread ({e}). Falling back to requests.")
+                class MockCurlSession(requests.Session):
+                    def __init__(self, *args, **kwargs):
+                        super().__init__(*args, **kwargs)
+                        self.impersonate = None
+                self._local.session = MockCurlSession()
         return self._local.session
 
     def __getattr__(self, name):

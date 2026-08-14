@@ -25,52 +25,72 @@ import socket
 import string
 import threading
 import time
-import curl_cffi
+try:
+    import curl_cffi
+    session = curl_cffi.Session(impersonate="chrome136")
+    HAS_CURL_CFFI = True
+except Exception as e:
+    HAS_CURL_CFFI = False
+    print(f"Warning: curl-cffi failed to load ({e}). Falling back to requests.")
+    class MockCurlSession(requests.Session):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.impersonate = None
+    session = MockCurlSession()
+
 import uuid
 import websocket
-import orjson
+
+try:
+    import orjson
+    HAS_ORJSON = True
+except ImportError:
+    HAS_ORJSON = False
+    import json as std_json
 
 class JsonWrapper:
     @staticmethod
     def loads(data, **kwargs):
-        return orjson.loads(data)
+        if HAS_ORJSON:
+            return orjson.loads(data)
+        return std_json.loads(data)
 
     @staticmethod
     def load(fp, **kwargs):
-        return orjson.loads(fp.read())
+        if HAS_ORJSON:
+            return orjson.loads(fp.read())
+        return std_json.load(fp)
 
     @staticmethod
     def dumps(data, indent=None, separators=None, sort_keys=False, **kwargs):
-        option = 0
-        
-        if indent:
-            option |= orjson.OPT_INDENT_2
-            
-        if sort_keys:
-            option |= orjson.OPT_SORT_KEYS
-
-        option |= orjson.OPT_NON_STR_KEYS 
-
-        return orjson.dumps(data, option=option).decode()
+        if HAS_ORJSON:
+            option = 0
+            if indent:
+                option |= orjson.OPT_INDENT_2
+            if sort_keys:
+                option |= orjson.OPT_SORT_KEYS
+            option |= orjson.OPT_NON_STR_KEYS 
+            return orjson.dumps(data, option=option).decode()
+        return std_json.dumps(data, indent=indent, separators=separators, sort_keys=sort_keys)
 
     @staticmethod
     def dump(data, fp, indent=None, separators=None, sort_keys=False, **kwargs):
-        option = 0
-        if indent:
-            option |= orjson.OPT_INDENT_2
-        if sort_keys:
-            option |= orjson.OPT_SORT_KEYS
-        
-        payload = orjson.dumps(data, option=option)
-        
-        try:
-            fp.write(payload)
-        except TypeError:
-            fp.write(payload.decode())
+        if HAS_ORJSON:
+            option = 0
+            if indent:
+                option |= orjson.OPT_INDENT_2
+            if sort_keys:
+                option |= orjson.OPT_SORT_KEYS
+            payload = orjson.dumps(data, option=option)
+            try:
+                fp.write(payload)
+            except TypeError:
+                fp.write(payload.decode())
+        else:
+            std_json.dump(data, fp, indent=indent, separators=separators, sort_keys=sort_keys)
 
 json = JsonWrapper()
 
-session = curl_cffi.Session(impersonate="chrome136",)
 
 def get_random_str(length):
     return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
@@ -115,11 +135,13 @@ C = {
     "rose": h("#FF007F")
 }
 
+scraped_dir = "/tmp/scraped" if os.environ.get("VERCEL") else "scraped"
+
 class Files:
     @staticmethod
     def write_config():
         try:
-            if not os.path.exists("config.json"):
+            if not os.environ.get("VERCEL") and not os.path.exists("config.json"):
                 data = {
                     "Proxies": False,
                     "Theme": "light_blue", 
@@ -127,28 +149,30 @@ class Files:
                 with open("config.json", "w") as f:
                     json.dump(data, f, indent=4)
         except Exception as e:
-            console.log("Failed", C["red"], "Failed to Write Config", e)
+            print(f"Failed to Write Config: {e}")
 
     @staticmethod
     def write_folders():
-        folders = ["data", "scraped"]
+        folders = ["data", scraped_dir]
         for folder in folders:
             try:
                 if not os.path.exists(folder):
-                    os.mkdir(folder)
+                    os.makedirs(folder, exist_ok=True)
             except Exception as e:
-                console.log("Failed", C["red"], "Failed to Write Folders", e)
+                print(f"Failed to Write Folder {folder}: {e}")
 
     @staticmethod
     def write_files():
+        if os.environ.get("VERCEL"):
+            return
         files = ["tokens.txt", "proxies.txt"]
         for file in files:
             try:
-                if not os.path.exists(file):
+                if not os.path.exists(f"data/{file}"):
                     with open(f"data/{file}", "a") as f:
                         f.close()
             except Exception as e:
-                console.log("Failed", C["red"], "Failed to Write Files", e)
+                print(f"Failed to Write File {file}: {e}")
 
     @staticmethod
     def run_tasks():
@@ -158,11 +182,15 @@ class Files:
 
 Files.run_tasks()
 
-with open("config.json") as f:
-    Config = json.load(f)
+
+try:
+    with open("config.json") as f:
+        Config = json.load(f)
+except Exception:
+    Config = {"Proxies": False, "Theme": "light_blue"}
     
-proxy = Config["Proxies"]
-color = Config["Theme"]
+proxy = Config.get("Proxies", False)
+color = Config.get("Theme", "light_blue")
 global_raider = None
 
 class Render:
@@ -174,8 +202,10 @@ class Render:
         self.print_lock = threading.Lock()
         self.theme_name = color if color in C else "light_blue"
         self.theme_hex = C[self.theme_name].hex
-        self.background = C[self.theme_name]
-        self.username = getpass.getuser()
+        try:
+            self.username = getpass.getuser()
+        except Exception:
+            self.username = os.environ.get("USER") or os.environ.get("LOGNAME") or "vercel"
 
     def title(self, title):
         try:
@@ -757,7 +787,7 @@ class Raider:
         try:
             in_guild = []
 
-            if not os.path.exists(f"scraped/{guild_id}.json"):
+            if not os.path.exists(f"{scraped_dir}/{guild_id}.json"):
                 for token in tokens:
                     response = session.get(
                         f"https://discord.com/api/v9/guilds/{guild_id}",
@@ -775,7 +805,7 @@ class Raider:
                 token = random.choice(in_guild)
                 members = scrape(token, guild_id, channel_id)
 
-                with open(f"scraped/{guild_id}.json", "w") as f:
+                with open(f"{scraped_dir}/{guild_id}.json", "w") as f:
                     json.dump(list(members.keys()), f, indent=2)
         except Exception as e:
             console.log("Failed", C["red"], False, e)
@@ -783,7 +813,7 @@ class Raider:
     def get_random_members(self, guild_id, count):
         if guild_id not in self.cached_members:
             try:
-                file_path = f"scraped/{guild_id}.json"
+                file_path = f"{scraped_dir}/{guild_id}.json"
                 if os.path.exists(file_path):
                     with open(file_path, "r") as f:
                         self.cached_members[guild_id] = json.loads(f.read())
@@ -792,6 +822,7 @@ class Raider:
             except Exception as e:
                 console.log("Error", C["red"], f"Cache Load Failed: {e}")
                 return ""
+
 
         members = self.cached_members[guild_id]
         if not members: 
